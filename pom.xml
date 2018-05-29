@@ -267,20 +267,6 @@ Contributors:
                     </configuration>
                 </plugin>
                 <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.20.1</version>
-                    <configuration>
-                        <systemPropertyVariables>
-                             <logback.configurationFile>logback-test.xml</logback.configurationFile>
-                        </systemPropertyVariables>
-                        <parallel>classes</parallel>
-                        <threadCount>4</threadCount>
-                        <excludes>
-                            <exclude>**/*$*</exclude>
-                        </excludes>
-                    </configuration>
-                </plugin>
-                <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>3.0.2</version>
                     <configuration>
