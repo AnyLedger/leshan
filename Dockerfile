@@ -43,3 +43,22 @@ RUN set -x \
 # improved, please open an issue or a pull request so we can discuss it!
 #
 #   https://github.com/docker-library/openjdk/issues
+
+
+# Server web app
+EXPOSE 8080
+
+# Local client COAP port
+EXPOSE 5001
+
+# Server COAP port
+EXPOSE 5683
+
+# Server COAP secure port
+EXPOSE 5684
+
+# Copy Leshan server application JAR (with libraries inside) 
+COPY leshan-server-demo/target/leshan-server-demo-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-demo.jar
+
+# Specify default command 
+CMD ["/usr/bin/java", "-jar", "/leshan-server-demo.jar"]
