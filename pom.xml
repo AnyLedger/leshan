@@ -45,6 +45,7 @@ Contributors:
         <module>leshan-server-core</module>
         <module>leshan-server-cf</module>
         <module>leshan-server-cluster</module>
+        <module>leshan-server-cluster-ipfs</module>
         <module>leshan-client-core</module>
         <module>leshan-client-cf</module>
 
