@@ -48,7 +48,8 @@ RUN set -x \
 # Server web app
 EXPOSE 8080
 
-# Local client COAP port
+# IPFS ports
+EXPOSE 4001
 EXPOSE 5001
 
 # Server COAP port
@@ -58,7 +59,7 @@ EXPOSE 5683
 EXPOSE 5684
 
 # Copy Leshan server application JAR (with libraries inside) 
-COPY leshan-server-demo/target/leshan-server-demo-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-demo.jar
+COPY leshan-server-cluster-ipfs/target/leshan-server-cluster-ipfs-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-cluster-ipfs.jar
 
 # Specify default command 
-CMD ["/usr/bin/java", "-jar", "/leshan-server-demo.jar"]
+CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar"]
