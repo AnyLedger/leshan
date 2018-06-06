@@ -18,6 +18,9 @@ package org.eclipse.leshan.server.cluster;
 import java.io.File;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -33,9 +36,15 @@ import org.eclipse.leshan.server.californium.LeshanServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
 import org.eclipse.leshan.server.model.LwM2mModelProvider;
 import org.eclipse.leshan.server.model.StaticModelProvider;
+import org.eclipse.leshan.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Predicates;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.RetryException;
 import io.ipfs.api.IPFS;
 
 /**
@@ -131,12 +140,26 @@ public class LeshanClusterServer {
         createAndStartServer(clusterInstanceId, localAddress, localPort, secureLocalAddress, secureLocalPort, modelsFolderPath, ipfsUrl);
     }
 
-    public static void createAndStartServer(String clusterInstanceId, String localAddress, int localPort,
+    private static void createAndStartServer(String clusterInstanceId, String localAddress, int localPort,
             String secureLocalAddress, int secureLocalPort, String modelsFolderPath, String ipfsUrl) {
         // Setting up IPFS
-        LOG.info("Trying to connect to IPFS from Leshan server...");
-        IPFS ipfs = new IPFS(ipfsUrl);
-        
+
+        IPFS ipfs = null;
+
+        Retryer<IPFS> retryer = RetryerBuilder.<IPFS>newBuilder()
+            .retryIfResult(Predicates.<IPFS>isNull())
+            .retryIfRuntimeException()
+            .withStopStrategy(StopStrategies.stopAfterDelay(5, TimeUnit.SECONDS))
+            .build();
+
+        try {
+            ipfs = retryer.call(new IPFSRegistrationTask(ipfsUrl));
+        } catch (RetryException e) {
+            LOG.error("Error while opening a connection to IPFS: ", e);
+        } catch (ExecutionException e) {
+            LOG.error("Error while opening a connection to IPFS: ", e);
+        }
+
         // Prepare LWM2M server.
         LeshanServerBuilder builder = new LeshanServerBuilder();
         builder.setLocalAddress(localAddress, localPort);
