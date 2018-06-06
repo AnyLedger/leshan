@@ -68,7 +68,7 @@ public class LeshanClusterServer {
                 String.format("Sets the local secure CoAP port.\nDefault: %d.", LwM2m.DEFAULT_COAP_SECURE_PORT));
         options.addOption("m", "modelsfolder", true, "A folder which contains object models in OMA DDF(.xml) format.");
         options.addOption("ipfs", "ipfs", true,
-                "Sets the location of IPFS. Default: '/ip4/127.0.0.1/tcp/5001'.");
+                "Sets the location of IPFS. Default: '/ip4/172.21.0.2/tcp/5001'.");
         HelpFormatter formatter = new HelpFormatter();
         formatter.setOptionComparator(null);
 
@@ -123,22 +123,18 @@ public class LeshanClusterServer {
         String modelsFolderPath = cl.getOptionValue("m");
 
         // Get the IPFS hostname:port
-        String ipfsUrl = "/ip4/127.0.0.1/tcp/5001";
+        String ipfsUrl = "/ip4/172.21.0.2/tcp/5001";
         if (cl.hasOption("ipfs")) {
             ipfsUrl = cl.getOptionValue("ipfs");
         }
 
-        try {
-            createAndStartServer(clusterInstanceId, localAddress, localPort, secureLocalAddress, secureLocalPort,
-                    modelsFolderPath, ipfsUrl);
-        } catch (Exception e) {
-            LOG.error("Jetty stopped with unexpected error ...", e);
-        }
+        createAndStartServer(clusterInstanceId, localAddress, localPort, secureLocalAddress, secureLocalPort, modelsFolderPath, ipfsUrl);
     }
 
     public static void createAndStartServer(String clusterInstanceId, String localAddress, int localPort,
-            String secureLocalAddress, int secureLocalPort, String modelsFolderPath, String ipfsUrl) throws Exception {
+            String secureLocalAddress, int secureLocalPort, String modelsFolderPath, String ipfsUrl) {
         // Setting up IPFS
+        LOG.info("Trying to connect to IPFS from Leshan server...");
         IPFS ipfs = new IPFS(ipfsUrl);
         
         // Prepare LWM2M server.
@@ -171,6 +167,8 @@ public class LeshanClusterServer {
         //lwServer.getRegistrationService().addListener(new RedisRegistrationEventPublisher(jedis));
 
         // Start Jetty & Leshan
+        LOG.info("Starting Leshan server...");
+
         lwServer.start();
     }
 }
