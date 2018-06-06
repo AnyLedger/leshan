@@ -59,7 +59,7 @@ EXPOSE 5683
 EXPOSE 5684
 
 # Copy Leshan server application JAR (with libraries inside) 
-COPY leshan-server-cluster-ipfs/target/leshan-server-cluster-ipfs-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-cluster-ipfs.jar
+COPY target/leshan-server-cluster-ipfs-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-cluster-ipfs.jar
 
 # Specify default command 
 CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar"]
