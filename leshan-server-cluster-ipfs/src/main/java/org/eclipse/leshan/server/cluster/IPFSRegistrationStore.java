@@ -394,6 +394,8 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             return addResult.hash;
         } catch (IOException e) { 
             LOG.error("There was an error while adding registration to IPFS", e);
+        } catch (NullPointerException e) { 
+            LOG.error("There was an error while adding registration to IPFS", e);
         } 
 
         return null;
