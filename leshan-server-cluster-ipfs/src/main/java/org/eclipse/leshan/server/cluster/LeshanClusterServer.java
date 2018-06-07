@@ -77,7 +77,7 @@ public class LeshanClusterServer {
                 String.format("Sets the local secure CoAP port.\nDefault: %d.", LwM2m.DEFAULT_COAP_SECURE_PORT));
         options.addOption("m", "modelsfolder", true, "A folder which contains object models in OMA DDF(.xml) format.");
         options.addOption("ipfs", "ipfs", true,
-                "Sets the location of IPFS. Default: '/ip4/172.21.0.2/tcp/5001'.");
+                "Sets the location of IPFS. Default: '/ip4/172.21.0.4/tcp/5001'.");
         HelpFormatter formatter = new HelpFormatter();
         formatter.setOptionComparator(null);
 
@@ -132,10 +132,12 @@ public class LeshanClusterServer {
         String modelsFolderPath = cl.getOptionValue("m");
 
         // Get the IPFS hostname:port
-        String ipfsUrl = "/ip4/172.21.0.2/tcp/5001";
-        if (cl.hasOption("ipfs")) {
-            ipfsUrl = cl.getOptionValue("ipfs");
+        String ipfsUrl = cl.getOptionValue("ipfs");
+        if (ipfsUrl == null) {
+            ipfsUrl = "/ip4/172.21.0.4/tcp/5001";
         }
+
+        LOG.info(String.format("IPFS address set to: %s", ipfsUrl));
 
         createAndStartServer(clusterInstanceId, localAddress, localPort, secureLocalAddress, secureLocalPort, modelsFolderPath, ipfsUrl);
     }
@@ -149,15 +151,15 @@ public class LeshanClusterServer {
         Retryer<IPFS> retryer = RetryerBuilder.<IPFS>newBuilder()
             .retryIfResult(Predicates.<IPFS>isNull())
             .retryIfRuntimeException()
-            .withStopStrategy(StopStrategies.stopAfterDelay(5, TimeUnit.SECONDS))
+            .withStopStrategy(StopStrategies.stopAfterDelay(15, TimeUnit.SECONDS))
             .build();
 
         try {
             ipfs = retryer.call(new IPFSRegistrationTask(ipfsUrl));
         } catch (RetryException e) {
-            LOG.error("Error while opening a connection to IPFS: ", e);
+            LOG.error("Error while opening a connection to IPFS", e);
         } catch (ExecutionException e) {
-            LOG.error("Error while opening a connection to IPFS: ", e);
+            LOG.error("Error while opening a connection to IPFS", e);
         }
 
         // Prepare LWM2M server.
