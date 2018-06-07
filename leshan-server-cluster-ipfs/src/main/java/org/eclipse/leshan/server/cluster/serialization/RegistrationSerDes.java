@@ -73,7 +73,7 @@ public class RegistrationSerDes {
         }
         o.add("addAttr", addAttr);
         o.add("root", r.getRootPath());
-        o.add("lastUp", r.getLastUpdate().getTime());
+
         return o;
     }
 
@@ -90,7 +90,6 @@ public class RegistrationSerDes {
                 IdentitySerDes.deserialize(jObj.get("identity").asObject()),
                 new InetSocketAddress(jObj.getString("regAddr", null), jObj.getInt("regPort", 0)));
         b.bindingMode(BindingMode.valueOf(jObj.getString("bnd", null)));
-        b.lastUpdate(new Date(jObj.getLong("lastUp", 0)));
         b.lifeTimeInSec(jObj.getLong("lt", 0));
         b.lwM2mVersion(jObj.getString("ver", "1.0"));
         b.registrationDate(new Date(jObj.getLong("regDate", 0)));

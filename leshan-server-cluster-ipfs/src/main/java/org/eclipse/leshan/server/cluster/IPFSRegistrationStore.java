@@ -389,7 +389,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             MerkleNode addResult = this.ipfs.add(filePayload).get(0);
             ipfsHashByEndpoint.put(registration.getEndpoint(), addResult.toString());
 
-            LOG.info(String.format("Added registration to IPFS with hash: %s", addResult.hash));
+            LOG.info(String.format("Saved/updated registration to IPFS with hash: %s", addResult.hash));
 
             return addResult.hash;
         } catch (IOException e) { 
