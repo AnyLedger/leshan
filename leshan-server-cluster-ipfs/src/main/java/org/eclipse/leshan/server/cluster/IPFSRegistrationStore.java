@@ -24,6 +24,7 @@
  *******************************************************************************/
 package org.eclipse.leshan.server.cluster;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,7 +61,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.ipfs.api.IPFS;
+import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
+import io.ipfs.multihash.Multihash;
 
 /**
  * An in memory store for registration and observation.
@@ -70,6 +73,8 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
     // Data structure
     private final Map<String /* end-point */, Registration> registrationsByEndpoint = new HashMap<>();
+    private final Map<String /* end-point */, String> ipfsHashByEndpoint = new HashMap<>();
+
     private Map<Token, org.eclipse.californium.core.observe.Observation> obsByToken = new HashMap<>();
     private Map<String, Set<Token>> tokensByRegId = new HashMap<>();
 
@@ -89,7 +94,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
     public IPFSRegistrationStore(IPFS ipfs, long cleanPeriodInSec) {
         this(ipfs, 
-            Executors.newScheduledThreadPool(1, new NamedThreadFactory(String.format("IPFSRegistrationStore Cleaner (%ds)", cleanPeriodInSec))),
+            Executors.newScheduledThreadPool(1, new NamedThreadFactory(String.format("IPFSRegistrationStore (%ds)", cleanPeriodInSec))),
             cleanPeriodInSec);
     }
 
@@ -107,6 +112,9 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             lock.writeLock().lock();
 
             Registration registrationRemoved = registrationsByEndpoint.put(registration.getEndpoint(), registration);
+
+            saveOrUpdateRegistrationToIPFS(registration);
+
             if (registrationRemoved != null) {
                 Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registrationRemoved.getId());
                 return new Deregistration(registrationRemoved, observationsRemoved);
@@ -128,6 +136,9 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             } else {
                 Registration updatedRegistration = update.update(registration);
                 registrationsByEndpoint.put(updatedRegistration.getEndpoint(), updatedRegistration);
+                
+                saveOrUpdateRegistrationToIPFS(updatedRegistration);
+
                 return new UpdatedRegistration(registration, updatedRegistration);
             }
         } finally {
@@ -199,7 +210,10 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             Registration registration = getRegistration(registrationId);
             if (registration != null) {
                 Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registration.getId());
+                
                 registrationsByEndpoint.remove(registration.getEndpoint());
+                ipfsHashByEndpoint.remove(registration.getEndpoint());
+
                 return new Deregistration(registration, observationsRemoved);
             }
             return null;
@@ -363,6 +377,26 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    /* *************** IPFS utility functions **************** */
+
+    Multihash saveOrUpdateRegistrationToIPFS(Registration registration) {        
+        try {
+            byte[] payload = RegistrationSerDes.bSerialize(registration);
+            NamedStreamable.ByteArrayWrapper filePayload = new NamedStreamable.ByteArrayWrapper("hello.txt", payload);
+    
+            MerkleNode addResult = this.ipfs.add(filePayload).get(0);
+            ipfsHashByEndpoint.put(registration.getEndpoint(), addResult.toString());
+
+            LOG.info(String.format("Added registration to IPFS with hash: %s", addResult.hash));
+
+            return addResult.hash;
+        } catch (IOException e) { 
+            LOG.error("There was an error while adding registration to IPFS", e);
+        } 
+
+        return null;
     }
 
     /* *************** Observation utility functions **************** */
