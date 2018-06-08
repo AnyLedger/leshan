@@ -62,4 +62,4 @@ EXPOSE 5684
 COPY target/leshan-server-cluster-ipfs-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-cluster-ipfs.jar
 
 # Specify default command 
-CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar", "-ipfs", "/ip4/172.21.0.4/tcp/5001"]
+CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar", "-ipfs", "/ip4/172.21.0.3/tcp/5001"]
