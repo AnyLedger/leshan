@@ -395,7 +395,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             NamedStreamable.ByteArrayWrapper filePayload = new NamedStreamable.ByteArrayWrapper("hello.txt", payload);
     
             MerkleNode addResult = this.ipfs.add(filePayload).get(0);
-            ipfsHashByEndpoint.put(registration.getEndpoint(), addResult.toString());
+            ipfsHashByEndpoint.put(registration.getEndpoint(), addResult.hash.toString());
 
             LOG.info(String.format("Saved/updated registration to IPFS with hash: %s", addResult.hash));
 
