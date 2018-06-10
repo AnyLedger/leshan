@@ -78,6 +78,8 @@ public class LeshanClusterServer {
         options.addOption("m", "modelsfolder", true, "A folder which contains object models in OMA DDF(.xml) format.");
         options.addOption("ipfs", "ipfs", true,
                 "Sets the location of IPFS. Default: '/ip4/172.21.0.4/tcp/5001'.");
+        options.addOption("bn", "blockchainnode", true,
+                "Sets the address of blockchain node. Default: '172.21.0.2:8545'.");        
         HelpFormatter formatter = new HelpFormatter();
         formatter.setOptionComparator(null);
 
@@ -139,13 +141,35 @@ public class LeshanClusterServer {
 
         LOG.info(String.format("IPFS address set to: %s", ipfsUrl));
 
-        createAndStartServer(clusterInstanceId, localAddress, localPort, secureLocalAddress, secureLocalPort, modelsFolderPath, ipfsUrl);
+        // Get the blockchain node hostname:port
+        String blockchainNodeUrl = cl.getOptionValue("bn");
+        if (blockchainNodeUrl == null) {
+            blockchainNodeUrl = "172.21.0.2:8545";
+        }
+
+        LOG.info(String.format("Blockchain node host address set to: %s", blockchainNodeUrl));
+
+        createAndStartServer(
+            clusterInstanceId, 
+            localAddress,
+            localPort, 
+            secureLocalAddress, 
+            secureLocalPort, 
+            modelsFolderPath, 
+            ipfsUrl,
+            blockchainNodeUrl);
     }
 
-    private static void createAndStartServer(String clusterInstanceId, String localAddress, int localPort,
-            String secureLocalAddress, int secureLocalPort, String modelsFolderPath, String ipfsUrl) {
-        // Setting up IPFS
-
+    private static void createAndStartServer(
+        String clusterInstanceId, 
+        String localAddress, 
+        int localPort,
+        String secureLocalAddress, 
+        int secureLocalPort, 
+        String modelsFolderPath, 
+        String ipfsUrl,
+        String blockchainNodeUrl) {
+        
         IPFS ipfs = null;
 
         Retryer<IPFS> retryer = RetryerBuilder.<IPFS>newBuilder()
@@ -157,9 +181,9 @@ public class LeshanClusterServer {
         try {
             ipfs = retryer.call(new IPFSRegistrationTask(ipfsUrl));
         } catch (RetryException e) {
-            LOG.error("Error while opening a connection to IPFS", e);
+            LOG.error("Error while opening a connection to IPFS. Retry timeout expired.");
         } catch (ExecutionException e) {
-            LOG.error("Error while opening a connection to IPFS", e);
+            LOG.error("Error while opening a connection to IPFS");
         }
 
         // Prepare LWM2M server.

@@ -26,7 +26,12 @@ Contributors:
     <artifactId>leshan-server-cluster-ipfs</artifactId>
     <packaging>bundle</packaging>
     <name>leshan - server cluster ipfs</name>
-    <description>Experimental clustering support for Leshan.</description>
+    <description>IPFS and Blockchain support for Leshan.</description>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
 
     <repositories>
         <repository>
@@ -128,6 +133,15 @@ Contributors:
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>

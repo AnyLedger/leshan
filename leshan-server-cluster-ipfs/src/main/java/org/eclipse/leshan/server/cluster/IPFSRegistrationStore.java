@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.math.BigInteger;
 
 import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.observe.ObservationUtil;
@@ -59,6 +60,12 @@ import org.eclipse.leshan.server.cluster.serialization.RegistrationSerDes;
 import org.eclipse.leshan.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
+import org.web3j.crypto.Credentials;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.core.RemoteCall;
 
 import io.ipfs.api.IPFS;
 import io.ipfs.api.MerkleNode;
@@ -93,7 +100,8 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
     }
 
     public IPFSRegistrationStore(IPFS ipfs, long cleanPeriodInSec) {
-        this(ipfs, 
+        this(
+            ipfs, 
             Executors.newScheduledThreadPool(1, new NamedThreadFactory(String.format("IPFSRegistrationStore (%ds)", cleanPeriodInSec))),
             cleanPeriodInSec);
     }
@@ -478,7 +486,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
      */
     @Override
     public void start() {
-        schedExecutor.scheduleAtFixedRate(new Cleaner(), cleanPeriod, cleanPeriod, TimeUnit.SECONDS);
+        schedExecutor.scheduleAtFixedRate(new EthereumAgent(), cleanPeriod, cleanPeriod, TimeUnit.SECONDS);
     }
 
     /**
@@ -520,10 +528,26 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         }
     }
 
-    private class IPFSAgent implements Runnable {
+    private class EthereumAgent implements Runnable {
+
+        private Web3j web3j;
+        private Credentials credentials;
+        private int gasLimit = 90000;
+        private long gasPrice = 20000000000L;
+        private String ethereumNodeUrl = "http://172.21.0.2:8545";
+        private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
+        private String deviceManagerSmartContractAddress = "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80";
+
+        public EthereumAgent() {
+            this.web3j = Web3j.build(new HttpService(ethereumNodeUrl));
+            this.credentials = Credentials.create(privateKey);
+        }
+
         @Override
         public void run() {
             try {
+                LOG.info("Starting Ethereum agent.");
+
                 Collection<Registration> allRegistrations = new ArrayList<>();
                 try {
                     lock.readLock().lock();
@@ -534,13 +558,21 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
                 for (Registration registration : allRegistrations) {
                     if (registration.isAlive()) {
-                        byte[] payload = RegistrationSerDes.bSerialize(registration);
-                        NamedStreamable.ByteArrayWrapper filePayload = new NamedStreamable.ByteArrayWrapper("hello.txt", payload);
-                        ipfs.add(filePayload);
+                        DeviceManager deviceManager = DeviceManager.load(
+                            this.deviceManagerSmartContractAddress, 
+                            this.web3j, 
+                            this.credentials, 
+                            new BigInteger(String.valueOf(this.gasPrice)), 
+                            new BigInteger(String.valueOf(this.gasLimit)));
+                        
+                        String ipfsHash = ipfsHashByEndpoint.get(registration.getEndpoint());
+                        
+                        TransactionReceipt transactionReceipt = deviceManager.setLastRegistration(ipfsHash).send();
+                        LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
                     }
                 }
             } catch (Exception e) {
-                LOG.warn("Unexpected Exception while adding registrations to IPFS", e);
+                LOG.warn("Unexpected Exception while adding registrations to Ethereum", e);
             }
         }
     }
