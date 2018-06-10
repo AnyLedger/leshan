@@ -164,7 +164,7 @@ public class LeshanClusterServer {
             gasLimit = Long.parseLong(gasLimitOption);
         }
 
-        LOG.info(String.format("Gas limit set to: %l", gasLimit));
+        LOG.info(String.format("Gas limit set to: %d", gasLimit));
 
         String gasPriceOption = cl.getOptionValue("gp");
         long gasPrice = 20000000000L;
@@ -172,7 +172,7 @@ public class LeshanClusterServer {
             gasPrice = Long.parseLong(gasPriceOption);
         }
 
-        LOG.info(String.format("Gas price set to: %l", gasPrice));
+        LOG.info(String.format("Gas price set to: %d", gasPrice));
 
         String privateKey = cl.getOptionValue("pk");
         if (privateKey == null) {
