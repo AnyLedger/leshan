@@ -80,6 +80,15 @@ public class LeshanClusterServer {
                 "Sets the location of IPFS. Default: '/ip4/172.21.0.4/tcp/5001'.");
         options.addOption("bn", "blockchainnode", true,
                 "Sets the address of blockchain node. Default: '172.21.0.2:8545'.");        
+        options.addOption("gl", "gaslimit", true,
+                "Gas limit. Default: 90000.");   
+        options.addOption("gp", "gasprice", true,
+                "Gas price. Default: 20000000000L.");   
+        options.addOption("pk", "privatekey", true,
+                "Gas price. Default: 0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5.");   
+        options.addOption("sc", "smartcontract", true,
+                "Device Manager smart contract address. Default: 0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80.");   
+
         HelpFormatter formatter = new HelpFormatter();
         formatter.setOptionComparator(null);
 
@@ -148,6 +157,36 @@ public class LeshanClusterServer {
         }
 
         LOG.info(String.format("Blockchain node host address set to: %s", blockchainNodeUrl));
+
+        String gasLimitOption = cl.getOptionValue("gl");
+        long gasLimit = 90000;
+        if (gasLimitOption != null) {
+            gasLimit = Long.parseLong(gasLimitOption);
+        }
+
+        LOG.info(String.format("Gas limit set to: %l", gasLimit));
+
+        String gasPriceOption = cl.getOptionValue("gp");
+        long gasPrice = 20000000000L;
+        if (gasPriceOption != null) {
+            gasPrice = Long.parseLong(gasPriceOption);
+        }
+
+        LOG.info(String.format("Gas price set to: %l", gasPrice));
+
+        String privateKey = cl.getOptionValue("pk");
+        if (privateKey == null) {
+            privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
+        }
+
+        LOG.info(String.format("Private key set to: %s", privateKey));
+
+        String deviceManagerSmartContractAddress = cl.getOptionValue("sc");
+        if (deviceManagerSmartContractAddress == null) {
+            deviceManagerSmartContractAddress = "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80";
+        }
+
+        LOG.info(String.format("Device Manager smart contract address set to: %s", deviceManagerSmartContractAddress));
 
         createAndStartServer(
             clusterInstanceId, 

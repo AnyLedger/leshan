@@ -532,7 +532,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
         private Web3j web3j;
         private Credentials credentials;
-        private int gasLimit = 90000;
+        private long gasLimit = 90000;
         private long gasPrice = 20000000000L;
         private String ethereumNodeUrl = "http://172.21.0.2:8545";
         private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
