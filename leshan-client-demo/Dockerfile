@@ -62,4 +62,4 @@ EXPOSE 5684
 COPY target/leshan-client-demo-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-client-demo.jar
 
 # Specify default command 
-CMD ["/usr/bin/java", "-jar", "/leshan-client-demo.jar", "-lp", "6001", "-u", "172.21.0.5"]
+CMD ["/usr/bin/java", "-jar", "/leshan-client-demo.jar", "-lp", "6001", "-u", "lwm2m-server"]

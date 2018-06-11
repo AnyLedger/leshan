@@ -20,6 +20,6 @@ public class IPFSRegistrationTask implements Callable<IPFS> {
 
     @Override
     public IPFS call() {
-        return new IPFS(ipfsUrl);
+        return new IPFS(ipfsUrl, 5001);
     }
 }

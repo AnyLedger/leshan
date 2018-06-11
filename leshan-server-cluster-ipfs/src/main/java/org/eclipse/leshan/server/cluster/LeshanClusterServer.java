@@ -142,10 +142,10 @@ public class LeshanClusterServer {
         // Get models folder
         String modelsFolderPath = cl.getOptionValue("m");
 
-        // Get the IPFS hostname:port
+        // Get the IPFS hostname
         String ipfsUrl = cl.getOptionValue("ipfs");
         if (ipfsUrl == null) {
-            ipfsUrl = "/ip4/172.21.0.4/tcp/5001";
+            ipfsUrl = "ipfs";
         }
 
         LOG.info(String.format("IPFS address set to: %s", ipfsUrl));
