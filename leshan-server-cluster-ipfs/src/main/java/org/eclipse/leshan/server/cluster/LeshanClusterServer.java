@@ -153,7 +153,7 @@ public class LeshanClusterServer {
         // Get the blockchain node hostname:port
         String blockchainNodeUrl = cl.getOptionValue("bn");
         if (blockchainNodeUrl == null) {
-            blockchainNodeUrl = "172.21.0.2:8545";
+            blockchainNodeUrl = "ganache-cli:8545";
         }
 
         LOG.info(String.format("Blockchain node host address set to: %s", blockchainNodeUrl));

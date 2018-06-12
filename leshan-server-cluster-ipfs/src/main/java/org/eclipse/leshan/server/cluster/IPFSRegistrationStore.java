@@ -534,7 +534,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         private Credentials credentials;
         private long gasLimit = 90000;
         private long gasPrice = 20000000000L;
-        private String ethereumNodeUrl = "http://172.21.0.2:8545";
+        private String ethereumNodeUrl = "http://ganache-cli:8545";
         private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
         private String deviceManagerSmartContractAddress = "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80";
 
