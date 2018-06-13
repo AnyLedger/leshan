@@ -56,7 +56,8 @@ import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.server.registration.UpdatedRegistration;
 import org.eclipse.leshan.server.cluster.serialization.ObservationSerDes;
-import org.eclipse.leshan.server.cluster.serialization.RegistrationSerDes;
+import org.eclipse.leshan.server.cluster.serialization.DecentralizedRegistrationSerDes;
+import org.eclipse.leshan.server.cluster.DecentralizedRegistration;
 import org.eclipse.leshan.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +81,6 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
     // Data structure
     private final Map<String /* end-point */, Registration> registrationsByEndpoint = new HashMap<>();
-    private final Map<String /* end-point */, String> ipfsHashByEndpoint = new HashMap<>();
 
     private Map<Token, org.eclipse.californium.core.observe.Observation> obsByToken = new HashMap<>();
     private Map<String, Set<Token>> tokensByRegId = new HashMap<>();
@@ -119,9 +119,10 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         try {
             lock.writeLock().lock();
 
-            Registration registrationRemoved = registrationsByEndpoint.put(registration.getEndpoint(), registration);
+            DecentralizedRegistration decentralizedRegistration = new DecentralizedRegistration(registration);
+            saveOrUpdateRegistrationToIPFS(decentralizedRegistration);
 
-            saveOrUpdateRegistrationToIPFS(registration);
+            Registration registrationRemoved = registrationsByEndpoint.put(decentralizedRegistration.getEndpoint(), decentralizedRegistration);
 
             if (registrationRemoved != null) {
                 Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registrationRemoved.getId());
@@ -139,13 +140,15 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             lock.writeLock().lock();
 
             Registration registration = getRegistration(update.getRegistrationId());
+            
             if (registration == null) {
                 return null;
             } else {
-                Registration updatedRegistration = update.update(registration);
-                registrationsByEndpoint.put(updatedRegistration.getEndpoint(), updatedRegistration);
+                DecentralizedRegistration updatedRegistration = new DecentralizedRegistration(update.update(registration));
                 
                 saveOrUpdateRegistrationToIPFS(updatedRegistration);
+
+                registrationsByEndpoint.put(updatedRegistration.getEndpoint(), updatedRegistration);
 
                 return new UpdatedRegistration(registration, updatedRegistration);
             }
@@ -220,7 +223,6 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                 Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registration.getId());
                 
                 registrationsByEndpoint.remove(registration.getEndpoint());
-                ipfsHashByEndpoint.remove(registration.getEndpoint());
 
                 return new Deregistration(registration, observationsRemoved);
             }
@@ -389,24 +391,25 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
     /* *************** IPFS utility functions **************** */
 
-    Multihash saveOrUpdateRegistrationToIPFS(Registration registration) {        
+    void saveOrUpdateRegistrationToIPFS(DecentralizedRegistration registration) {        
         try {
-            byte[] payload = RegistrationSerDes.bSerialize(registration);
-            NamedStreamable.ByteArrayWrapper filePayload = new NamedStreamable.ByteArrayWrapper("hello.txt", payload);
-    
-            MerkleNode addResult = this.ipfs.add(filePayload).get(0);
-            ipfsHashByEndpoint.put(registration.getEndpoint(), addResult.hash.toString());
+            // Setting the current IPFS hash to be the previous one
+            registration.setLastIpfsHash(registration.getIpfsHash());
+
+            byte[] payload = DecentralizedRegistrationSerDes.bSerialize(registration);
+            NamedStreamable.ByteArrayWrapper ipfsPayload = new NamedStreamable.ByteArrayWrapper(payload);
+
+            MerkleNode addResult = this.ipfs.add(ipfsPayload).get(0);
+
+            // Setting the new IPFS hash to be the current one
+            registration.setIpfsHash(addResult.hash);
 
             LOG.info(String.format("Saved/updated registration to IPFS with hash: %s", addResult.hash));
-
-            return addResult.hash;
         } catch (IOException e) { 
             LOG.error("There was an error while adding registration to IPFS", e);
         } catch (NullPointerException e) { 
             LOG.error("There was an error while adding registration to IPFS", e);
         } 
-
-        return null;
     }
 
     /* *************** Observation utility functions **************** */
@@ -565,9 +568,9 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                             new BigInteger(String.valueOf(this.gasPrice)), 
                             new BigInteger(String.valueOf(this.gasLimit)));
                         
-                        String ipfsHash = ipfsHashByEndpoint.get(registration.getEndpoint());
+                        DecentralizedRegistration tempRegistration = (DecentralizedRegistration)registrationsByEndpoint.get(registration.getEndpoint());
                         
-                        TransactionReceipt transactionReceipt = deviceManager.setLastRegistration(ipfsHash).send();
+                        TransactionReceipt transactionReceipt = deviceManager.setLastRegistration(tempRegistration.getIpfsHash().toString()).send();
                         LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
                     }
                 }

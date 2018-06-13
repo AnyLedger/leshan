@@ -18,7 +18,7 @@ package org.eclipse.leshan.server.cluster;
 import java.util.Collection;
 
 import org.eclipse.leshan.core.observation.Observation;
-import org.eclipse.leshan.server.cluster.serialization.RegistrationSerDes;
+import org.eclipse.leshan.server.cluster.serialization.DecentralizedRegistrationSerDes;
 import org.eclipse.leshan.server.cluster.serialization.RegistrationUpdateSerDes;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationListener;
@@ -46,7 +46,7 @@ public class RedisRegistrationEventPublisher implements RegistrationListener {
     @Override
     public void registered(Registration registration, Registration previousReg,
             Collection<Observation> previousObsersations) {
-        String payload = RegistrationSerDes.sSerialize(registration);
+        String payload = DecentralizedRegistrationSerDes.sSerialize(new DecentralizedRegistration(registration));
         try (Jedis j = pool.getResource()) {
             j.publish(REGISTER_EVENT, payload);
         }
@@ -57,7 +57,7 @@ public class RedisRegistrationEventPublisher implements RegistrationListener {
             Registration previousRegistration) {
         JsonObject value = new JsonObject();
         value.add("regUpdate", RegistrationUpdateSerDes.jSerialize(update));
-        value.add("regUpdated", RegistrationSerDes.jSerialize(updatedRegistration));
+        value.add("regUpdated", DecentralizedRegistrationSerDes.jSerialize(new DecentralizedRegistration(updatedRegistration)));
 
         try (Jedis j = pool.getResource()) {
             j.publish(UPDATE_EVENT, value.toString());
@@ -67,7 +67,7 @@ public class RedisRegistrationEventPublisher implements RegistrationListener {
     @Override
     public void unregistered(Registration registration, Collection<Observation> observations, boolean expired,
             Registration newReg) {
-        String payload = RegistrationSerDes.sSerialize(registration);
+        String payload = DecentralizedRegistrationSerDes.sSerialize(new DecentralizedRegistration(registration));
         try (Jedis j = pool.getResource()) {
             j.publish(DEREGISTER_EVENT, payload);
         }
