@@ -535,7 +535,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
         private Web3j web3j;
         private Credentials credentials;
-        private long gasLimit = 90000;
+        private long gasLimit = 2000000;
         private long gasPrice = 20000000000L;
         private String ethereumNodeUrl = "http://ganache-cli:8545";
         private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
@@ -570,7 +570,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                         
                         DecentralizedRegistration tempRegistration = (DecentralizedRegistration)registrationsByEndpoint.get(registration.getEndpoint());
                         
-                        TransactionReceipt transactionReceipt = deviceManager.setLastRegistration(tempRegistration.getIpfsHash().toString()).send();
+                        TransactionReceipt transactionReceipt = deviceManager.updateDeviceRegistration(tempRegistration.getId(), tempRegistration.getIpfsHash().toString()).send();
                         LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
                     }
                 }
