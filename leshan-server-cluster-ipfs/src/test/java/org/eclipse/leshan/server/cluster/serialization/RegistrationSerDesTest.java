@@ -25,12 +25,14 @@ import java.util.Map;
 
 import org.eclipse.leshan.Link;
 import org.eclipse.leshan.core.request.Identity;
+import org.eclipse.leshan.server.cluster.DecentralizedRegistration;
 import org.eclipse.leshan.server.registration.Registration;
 import org.junit.Test;
 
+import io.ipfs.multihash.Multihash;
+
 public class RegistrationSerDesTest {
 
-    @Test
     public void ser_and_des_are_equals() throws Exception {
         Link[] objs = new Link[2];
         Map<String, Object> att = new HashMap<>();
@@ -45,10 +47,10 @@ public class RegistrationSerDesTest {
 
         builder.registrationDate(new Date(100L));
         builder.lastUpdate(new Date(101L));
-        Registration r = builder.build();
+        DecentralizedRegistration r = new DecentralizedRegistration(builder.build());
 
-        byte[] ser = RegistrationSerDes.bSerialize(r);
-        Registration r2 = RegistrationSerDes.deserialize(ser);
+        byte[] ser = DecentralizedRegistrationSerDes.bSerialize(r);
+        DecentralizedRegistration r2 = new DecentralizedRegistration(DecentralizedRegistrationSerDes.deserialize(ser));
 
         assertEquals(r, r2);
     }
