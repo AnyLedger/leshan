@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.eclipse.leshan.Link;
 import org.eclipse.leshan.core.request.Identity;
-import org.eclipse.leshan.server.cluster.DecentralizedRegistration;
 import org.eclipse.leshan.server.registration.Registration;
 import org.junit.Test;
 
@@ -47,10 +46,10 @@ public class RegistrationSerDesTest {
 
         builder.registrationDate(new Date(100L));
         builder.lastUpdate(new Date(101L));
-        DecentralizedRegistration r = new DecentralizedRegistration(builder.build());
+        Registration r = builder.build();
 
-        byte[] ser = DecentralizedRegistrationSerDes.bSerialize(r);
-        DecentralizedRegistration r2 = new DecentralizedRegistration(DecentralizedRegistrationSerDes.deserialize(ser));
+        byte[] ser = RegistrationSerDes.bSerialize(r);
+        Registration r2 = RegistrationSerDes.deserialize(ser);
 
         assertEquals(r, r2);
     }

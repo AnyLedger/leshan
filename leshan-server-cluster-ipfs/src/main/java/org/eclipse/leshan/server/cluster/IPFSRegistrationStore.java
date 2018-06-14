@@ -56,9 +56,10 @@ import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.server.registration.UpdatedRegistration;
 import org.eclipse.leshan.server.cluster.serialization.ObservationSerDes;
-import org.eclipse.leshan.server.cluster.serialization.DecentralizedRegistrationSerDes;
-import org.eclipse.leshan.server.cluster.DecentralizedRegistration;
+import org.eclipse.leshan.server.cluster.serialization.RegistrationSerDes;
 import org.eclipse.leshan.util.NamedThreadFactory;
+import org.eclipse.leshan.server.cluster.IPFSRegistrationEventPublisher;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,11 +68,6 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.core.RemoteCall;
-
-import io.ipfs.api.IPFS;
-import io.ipfs.api.MerkleNode;
-import io.ipfs.api.NamedStreamable;
-import io.ipfs.multihash.Multihash;
 
 /**
  * An in memory store for registration and observation.
@@ -93,21 +89,17 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
     private final ScheduledExecutorService schedExecutor;
     private final long cleanPeriod; // in seconds
 
-    private final IPFS ipfs;
-
-    public IPFSRegistrationStore(IPFS ipfs) {
-        this(ipfs, 2); // default clean period : 2s
+    public IPFSRegistrationStore() {
+        this(2); // default clean period : 2s
     }
 
-    public IPFSRegistrationStore(IPFS ipfs, long cleanPeriodInSec) {
+    public IPFSRegistrationStore(long cleanPeriodInSec) {
         this(
-            ipfs, 
             Executors.newScheduledThreadPool(1, new NamedThreadFactory(String.format("IPFSRegistrationStore (%ds)", cleanPeriodInSec))),
             cleanPeriodInSec);
     }
 
-    public IPFSRegistrationStore(IPFS ipfs, ScheduledExecutorService schedExecutor, long cleanPeriodInSec) {
-        this.ipfs = ipfs;
+    public IPFSRegistrationStore(ScheduledExecutorService schedExecutor, long cleanPeriodInSec) {
         this.schedExecutor = schedExecutor;
         this.cleanPeriod = cleanPeriodInSec;
     }
@@ -119,10 +111,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         try {
             lock.writeLock().lock();
 
-            DecentralizedRegistration decentralizedRegistration = new DecentralizedRegistration(registration);
-            saveOrUpdateRegistrationToIPFS(decentralizedRegistration);
-
-            Registration registrationRemoved = registrationsByEndpoint.put(decentralizedRegistration.getEndpoint(), decentralizedRegistration);
+            Registration registrationRemoved = registrationsByEndpoint.put(registration.getEndpoint(), registration);
 
             if (registrationRemoved != null) {
                 Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registrationRemoved.getId());
@@ -144,9 +133,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             if (registration == null) {
                 return null;
             } else {
-                DecentralizedRegistration updatedRegistration = new DecentralizedRegistration(update.update(registration));
-                
-                saveOrUpdateRegistrationToIPFS(updatedRegistration);
+                Registration updatedRegistration = update.update(registration);
 
                 registrationsByEndpoint.put(updatedRegistration.getEndpoint(), updatedRegistration);
 
@@ -219,6 +206,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             lock.writeLock().lock();
 
             Registration registration = getRegistration(registrationId);
+            
             if (registration != null) {
                 Collection<Observation> observationsRemoved = unsafeRemoveAllObservations(registration.getId());
                 
@@ -389,29 +377,6 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         }
     }
 
-    /* *************** IPFS utility functions **************** */
-
-    void saveOrUpdateRegistrationToIPFS(DecentralizedRegistration registration) {        
-        try {
-            // Setting the current IPFS hash to be the previous one
-            registration.setLastIpfsHash(registration.getIpfsHash());
-
-            byte[] payload = DecentralizedRegistrationSerDes.bSerialize(registration);
-            NamedStreamable.ByteArrayWrapper ipfsPayload = new NamedStreamable.ByteArrayWrapper(payload);
-
-            MerkleNode addResult = this.ipfs.add(ipfsPayload).get(0);
-
-            // Setting the new IPFS hash to be the current one
-            registration.setIpfsHash(addResult.hash);
-
-            LOG.info(String.format("Saved/updated registration to IPFS with hash: %s", addResult.hash));
-        } catch (IOException e) { 
-            LOG.error("There was an error while adding registration to IPFS", e);
-        } catch (NullPointerException e) { 
-            LOG.error("There was an error while adding registration to IPFS", e);
-        } 
-    }
-
     /* *************** Observation utility functions **************** */
 
     private org.eclipse.californium.core.observe.Observation unsafeGetObservation(Token token) {
@@ -519,10 +484,11 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
 
                 for (Registration reg : allRegistrations) {
                     if (!reg.isAlive()) {
-                        // force de-registration
                         Deregistration removedRegistration = removeRegistration(reg.getId());
-                        expirationListener.registrationExpired(removedRegistration.getRegistration(),
-                                removedRegistration.getObservations());
+                        
+                        expirationListener.registrationExpired(
+                            removedRegistration.getRegistration(),
+                            removedRegistration.getObservations());
                     }
                 }
             } catch (Exception e) {
@@ -568,10 +534,16 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                             new BigInteger(String.valueOf(this.gasPrice)), 
                             new BigInteger(String.valueOf(this.gasLimit)));
                         
-                        DecentralizedRegistration tempRegistration = (DecentralizedRegistration)registrationsByEndpoint.get(registration.getEndpoint());
-                        
-                        TransactionReceipt transactionReceipt = deviceManager.updateDeviceRegistration(tempRegistration.getId(), tempRegistration.getIpfsHash().toString()).send();
-                        LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
+                        Registration tempRegistration = registrationsByEndpoint.get(registration.getEndpoint());
+
+                        String latestIpfsHash = tempRegistration.getLatestIpfsHash();
+
+                        if (latestIpfsHash != null && !latestIpfsHash.isEmpty()) {
+                            TransactionReceipt transactionReceipt = deviceManager.updateDeviceRegistration(tempRegistration.getId(), latestIpfsHash).send();
+                            LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
+                        } else {
+                            LOG.warn("Latest IPFS hash is missing on the registration");
+                        }
                     }
                 }
             } catch (RuntimeException e) {

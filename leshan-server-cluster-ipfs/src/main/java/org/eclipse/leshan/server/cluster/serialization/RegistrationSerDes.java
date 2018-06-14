@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.eclipse.leshan.Link;
 import org.eclipse.leshan.core.request.BindingMode;
-import org.eclipse.leshan.server.cluster.DecentralizedRegistration;
 import org.eclipse.leshan.server.registration.Registration;
 
 import io.ipfs.multihash.Multihash;
@@ -35,9 +34,9 @@ import com.eclipsesource.json.JsonValue;
 /**
  * Functions for serialize and deserialize a Client in JSON.
  */
-public class DecentralizedRegistrationSerDes {
+public class RegistrationSerDes {
 
-    public static JsonObject jSerialize(DecentralizedRegistration r) {
+    public static JsonObject jSerialize(Registration r) {
         JsonObject o = Json.object();
         o.add("regDate", r.getRegistrationDate().getTime());
         o.add("identity", IdentitySerDes.serialize(r.getIdentity()));
@@ -51,10 +50,8 @@ public class DecentralizedRegistrationSerDes {
         o.add("bnd", r.getBindingMode().name());
         o.add("ep", r.getEndpoint());
         o.add("regId", r.getId());
-        
-        if (r.getLastIpfsHash() != null) {
-            o.add("lastIpfsHash", r.getLastIpfsHash().toString());
-        }
+        o.add("isAlive", r.isAlive());
+        o.add("lastIpfsHash", r.getLatestIpfsHash());
 
         JsonArray links = new JsonArray();
         for (Link l : r.getObjectLinks()) {
@@ -84,15 +81,15 @@ public class DecentralizedRegistrationSerDes {
         return o;
     }
 
-    public static String sSerialize(DecentralizedRegistration r) {
+    public static String sSerialize(Registration r) {
         return jSerialize(r).toString();
     }
 
-    public static byte[] bSerialize(DecentralizedRegistration r) {
+    public static byte[] bSerialize(Registration r) {
         return jSerialize(r).toString().getBytes();
     }
 
-    public static DecentralizedRegistration deserialize(JsonObject jObj) {
+    public static Registration deserialize(JsonObject jObj) {
         Registration.Builder b = new Registration.Builder(jObj.getString("regId", null), jObj.getString("ep", null),
                 IdentitySerDes.deserialize(jObj.get("identity").asObject()),
                 new InetSocketAddress(jObj.getString("regAddr", null), jObj.getInt("regPort", 0)));
@@ -132,13 +129,10 @@ public class DecentralizedRegistrationSerDes {
         }
         b.additionalRegistrationAttributes(addAttr);
 
-        DecentralizedRegistration decentralizedRegistration = new DecentralizedRegistration(b.build());
-        decentralizedRegistration.setLastIpfsHash(Multihash.fromHex(jObj.getString("lastIpfsHash", "")));
-
-        return decentralizedRegistration;
+        return b.build();
     }
 
-    public static DecentralizedRegistration deserialize(byte[] data) {
+    public static Registration deserialize(byte[] data) {
         return deserialize((JsonObject) Json.parse(new String(data)));
     }
 }

@@ -75,6 +75,10 @@ public class Registration implements Serializable {
 
     private final Date lastUpdate;
 
+    private String previousIpfsHash;
+
+    private String latestIpfsHash;
+
     protected Registration(String id, String endpoint, Identity identity, String lwM2mVersion,
             Long lifetimeInSec, String smsNumber, BindingMode bindingMode, Link[] objectLinks,
             InetSocketAddress registrationEndpointAddress,
@@ -118,6 +122,8 @@ public class Registration implements Serializable {
                     .unmodifiableMap(new HashMap<>(additionalRegistrationAttributes));
         }
 
+        this.previousIpfsHash = "";
+        this.latestIpfsHash = "";
     }
 
     public String getId() {
@@ -266,6 +272,22 @@ public class Registration implements Serializable {
 
     public Date getLastUpdate() {
         return lastUpdate;
+    }
+
+    public String getPreviousIpfsHash() {
+        return previousIpfsHash;
+    }
+
+    public String getLatestIpfsHash() {
+        return latestIpfsHash;
+    }
+
+    public void setPreviousIpfsHash(String previousIpfsHash) {
+        this.previousIpfsHash = previousIpfsHash;
+    }
+
+    public void setLatestIpfsHash(String latestIpfsHash) {
+        this.latestIpfsHash = latestIpfsHash;
     }
 
     /**

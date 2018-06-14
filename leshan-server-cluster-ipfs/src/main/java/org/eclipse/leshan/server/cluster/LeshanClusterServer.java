@@ -240,7 +240,7 @@ public class LeshanClusterServer {
         LwM2mModelProvider modelProvider = new StaticModelProvider(models);
         builder.setObjectModelProvider(modelProvider);
 
-        IPFSRegistrationStore registrationStore = new IPFSRegistrationStore(ipfs);
+        IPFSRegistrationStore registrationStore = new IPFSRegistrationStore();
         builder.setRegistrationStore(registrationStore);
         builder.setSecurityStore(new IPFSSecurityStore(ipfs));
 
@@ -252,7 +252,8 @@ public class LeshanClusterServer {
         //new RedisRequestResponseHandler(jedis, lwServer, lwServer.getRegistrationService(), tokenHandler,
         //        lwServer.getObservationService());
         //lwServer.getRegistrationService().addListener(tokenHandler);
-        //lwServer.getRegistrationService().addListener(new RedisRegistrationEventPublisher(jedis));
+        
+        lwServer.getRegistrationService().addListener(new IPFSRegistrationEventPublisher(ipfs));
 
         // Start Jetty & Leshan
         LOG.info("Starting Leshan server...");
