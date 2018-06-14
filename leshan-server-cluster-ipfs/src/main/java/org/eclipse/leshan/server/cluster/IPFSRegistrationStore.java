@@ -501,7 +501,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
         try {
             schedExecutor.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            LOG.warn("Clean up registration thread was interrupted.", e);
+            LOG.error("Clean up registration thread was interrupted.", e);
         }
     }
 
@@ -526,7 +526,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                     }
                 }
             } catch (Exception e) {
-                LOG.warn("Unexpected Exception while registration cleaning", e);
+                LOG.error("Unexpected Exception while registration cleaning", e);
             }
         }
     }
@@ -574,8 +574,10 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                         LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
                     }
                 }
+            } catch (RuntimeException e) {
+                LOG.error("Device Manager smart contract might not be deployed?", e);
             } catch (Exception e) {
-                LOG.warn("Unexpected Exception while adding registrations to Ethereum", e);
+                LOG.error("Unexpected Exception while adding registrations to Ethereum", e);
             }
         }
     }
