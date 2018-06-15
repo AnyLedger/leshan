@@ -135,6 +135,9 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
             } else {
                 Registration updatedRegistration = update.update(registration);
 
+                updatedRegistration.setPreviousIpfsHash(registration.getPreviousIpfsHash());
+                updatedRegistration.setLatestIpfsHash(registration.getLatestIpfsHash());
+
                 registrationsByEndpoint.put(updatedRegistration.getEndpoint(), updatedRegistration);
 
                 return new UpdatedRegistration(registration, updatedRegistration);
@@ -539,7 +542,11 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                         String latestIpfsHash = tempRegistration.getLatestIpfsHash();
 
                         if (latestIpfsHash != null && !latestIpfsHash.isEmpty()) {
-                            TransactionReceipt transactionReceipt = deviceManager.updateDeviceRegistration(tempRegistration.getId(), latestIpfsHash).send();
+                            TransactionReceipt transactionReceipt = 
+                                deviceManager.updateDeviceRegistration(
+                                    tempRegistration.getId(), 
+                                    latestIpfsHash).send();
+                            
                             LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
                         } else {
                             LOG.warn("Latest IPFS hash is missing on the registration");

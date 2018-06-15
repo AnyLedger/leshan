@@ -51,7 +51,7 @@ public class RegistrationSerDes {
         o.add("ep", r.getEndpoint());
         o.add("regId", r.getId());
         o.add("isAlive", r.isAlive());
-        o.add("lastIpfsHash", r.getLatestIpfsHash());
+        o.add("previousIpfsHash", r.getPreviousIpfsHash());
 
         JsonArray links = new JsonArray();
         for (Link l : r.getObjectLinks()) {

@@ -75,6 +75,7 @@ public class Registration implements Serializable {
 
     private final Date lastUpdate;
 
+    /** IPFS related variables */
     private String previousIpfsHash;
 
     private String latestIpfsHash;
