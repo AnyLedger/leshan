@@ -244,7 +244,7 @@ public class LeshanClusterServer {
         LwM2mModelProvider modelProvider = new StaticModelProvider(models);
         builder.setObjectModelProvider(modelProvider);
 
-        IPFSRegistrationStore registrationStore = new IPFSRegistrationStore();
+        DecentralizedRegistrationStore registrationStore = new DecentralizedRegistrationStore();
         builder.setRegistrationStore(registrationStore);
         builder.setSecurityStore(new IPFSSecurityStore(ipfs));
 
@@ -257,7 +257,7 @@ public class LeshanClusterServer {
         //        lwServer.getObservationService());
         //lwServer.getRegistrationService().addListener(tokenHandler);
         
-        lwServer.getRegistrationService().addListener(new IPFSRegistrationEventPublisher(ipfs, blockchainManager));
+        lwServer.getRegistrationService().addListener(new DecentralizedRegistrationEventPublisher(ipfs, blockchainManager));
 
         // Start Jetty & Leshan
         LOG.info("Starting Leshan server...");

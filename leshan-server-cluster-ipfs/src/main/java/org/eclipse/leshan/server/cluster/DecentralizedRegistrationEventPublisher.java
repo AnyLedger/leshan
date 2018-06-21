@@ -31,20 +31,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.ipfs.api.IPFS;
-import io.ipfs.api.MerkleNode;
 import io.ipfs.api.NamedStreamable;
-import io.ipfs.multihash.Multihash;
 
 /**
  * A Registration registry Listener which publish registration event on Redis channel.
  */
-public class IPFSRegistrationEventPublisher implements RegistrationListener {
-    private final Logger LOG = LoggerFactory.getLogger(IPFSRegistrationEventPublisher.class);
+public class DecentralizedRegistrationEventPublisher implements RegistrationListener {
+    private final Logger LOG = LoggerFactory.getLogger(DecentralizedRegistrationEventPublisher.class);
 
     private final IPFS ipfs;
     private final BlockchainManager blockchainManager;
 
-    public IPFSRegistrationEventPublisher(IPFS ipfs, BlockchainManager blockchainManager) {
+    public DecentralizedRegistrationEventPublisher(IPFS ipfs, BlockchainManager blockchainManager) {
         this.ipfs = ipfs;
         this.blockchainManager = blockchainManager;
     }
@@ -245,8 +243,8 @@ public class IPFSRegistrationEventPublisher implements RegistrationListener {
             registration.setPreviousIpfsHash(registration.getLatestIpfsHash());
             registration.setLatestIpfsHash(this.ipfs.add(ipfsPayload).get(0).hash.toString());
 
-            LOG.info(String.format("Previous: %s", registration.getPreviousIpfsHash()));
-            LOG.info(String.format("Latest: %s", registration.getLatestIpfsHash()));
+            LOG.debug(String.format("Previous IPFS hash: %s", registration.getPreviousIpfsHash()));
+            LOG.debug(String.format("Latest IPFS hash: %s", registration.getLatestIpfsHash()));
 
             LOG.info(String.format("Saved/updated registration to IPFS with hash: %s", registration.getLatestIpfsHash()));
 

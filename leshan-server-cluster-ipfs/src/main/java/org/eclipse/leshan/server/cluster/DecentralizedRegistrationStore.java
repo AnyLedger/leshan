@@ -24,7 +24,6 @@
  *******************************************************************************/
 package org.eclipse.leshan.server.cluster;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,10 +53,7 @@ import org.eclipse.leshan.server.registration.ExpirationListener;
 import org.eclipse.leshan.server.registration.Registration;
 import org.eclipse.leshan.server.registration.RegistrationUpdate;
 import org.eclipse.leshan.server.registration.UpdatedRegistration;
-import org.eclipse.leshan.server.cluster.serialization.ObservationSerDes;
-import org.eclipse.leshan.server.cluster.serialization.RegistrationSerDes;
 import org.eclipse.leshan.util.NamedThreadFactory;
-import org.eclipse.leshan.server.cluster.IPFSRegistrationEventPublisher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,8 +61,8 @@ import org.slf4j.LoggerFactory;
 /**
  * An in memory store for registration and observation.
  */
-public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Startable, Stoppable {
-    private final Logger LOG = LoggerFactory.getLogger(IPFSRegistrationStore.class);
+public class DecentralizedRegistrationStore implements CaliforniumRegistrationStore, Startable, Stoppable {
+    private final Logger LOG = LoggerFactory.getLogger(DecentralizedRegistrationStore.class);
 
     // Data structure
     private final Map<String /* end-point */, Registration> registrationsByEndpoint = new HashMap<>();
@@ -82,17 +78,17 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
     private final ScheduledExecutorService schedExecutor;
     private final long cleanPeriod; // in seconds
 
-    public IPFSRegistrationStore() {
+    public DecentralizedRegistrationStore() {
         this(2); // default clean period : 2s
     }
 
-    public IPFSRegistrationStore(long cleanPeriodInSec) {
+    public DecentralizedRegistrationStore(long cleanPeriodInSec) {
         this(
             Executors.newScheduledThreadPool(1, new NamedThreadFactory(String.format("IPFSRegistrationStore (%ds)", cleanPeriodInSec))),
             cleanPeriodInSec);
     }
 
-    public IPFSRegistrationStore(ScheduledExecutorService schedExecutor, long cleanPeriodInSec) {
+    public DecentralizedRegistrationStore(ScheduledExecutorService schedExecutor, long cleanPeriodInSec) {
         this.schedExecutor = schedExecutor;
         this.cleanPeriod = cleanPeriodInSec;
     }
