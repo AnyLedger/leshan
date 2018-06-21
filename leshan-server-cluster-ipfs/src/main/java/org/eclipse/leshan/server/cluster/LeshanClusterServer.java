@@ -198,6 +198,10 @@ public class LeshanClusterServer {
             secureLocalPort, 
             modelsFolderPath, 
             ipfsUrl,
+            gasLimit,
+            gasPrice,
+            privateKey,
+            deviceManagerSmartContractAddress,
             blockchainNodeUrl);
     }
 
@@ -209,6 +213,10 @@ public class LeshanClusterServer {
         int secureLocalPort, 
         String modelsFolderPath, 
         String ipfsUrl,
+        long gasLimit,
+        long gasPrice,
+        String privateKey,
+        String deviceManagerSmartContractAddress,
         String blockchainNodeUrl) {
         
         IPFS ipfs = null;
@@ -227,7 +235,7 @@ public class LeshanClusterServer {
             LOG.error("Error while opening a connection to IPFS");
         }
 
-        BlockchainManager blockchainManager = new EthereumManager();
+        BlockchainManager blockchainManager = new EthereumManager(gasLimit, gasPrice, blockchainNodeUrl, privateKey, deviceManagerSmartContractAddress);
 
         // Prepare LWM2M server.
         LeshanServerBuilder builder = new LeshanServerBuilder();

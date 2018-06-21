@@ -62,4 +62,4 @@ EXPOSE 5684
 COPY target/leshan-server-cluster-ipfs-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-cluster-ipfs.jar
 
 # Specify default command 
-CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar", "-ipfs", "ipfs", "-bn", "http://ganache-cli:8545", "-gl", "90000", "-gp", "20000000000", "-pk", "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5", "-sc", "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80"]
+CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar", "-ipfs", "ipfs", "-bn", "http://ganache-cli:8545", "-gl", "2000000", "-gp", "20000000000", "-pk", "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5", "-sc", "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80"]

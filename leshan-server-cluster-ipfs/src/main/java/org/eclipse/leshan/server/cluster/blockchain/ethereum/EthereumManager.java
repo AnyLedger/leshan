@@ -38,24 +38,18 @@ public class EthereumManager implements BlockchainManager {
 
     private Web3j web3j;
     private Credentials credentials;
-    private long gasLimit = 2000000;
-    private long gasPrice = 20000000000L;
-    private String ethereumNodeUrl = "http://ganache-cli:8545";
-    private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
-    private String deviceManagerSmartContractAddress = "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80";
-
     private DeviceManager deviceManager;
 
-    public EthereumManager() {
+    public EthereumManager(long gasLimit, long gasPrice, String ethereumNodeUrl, String privateKey, String deviceManagerSmartContractAddress) {
         this.web3j = Web3j.build(new HttpService(ethereumNodeUrl));
         this.credentials = Credentials.create(privateKey);
 
         this.deviceManager = DeviceManager.load(
-            this.deviceManagerSmartContractAddress, 
-            this.web3j, 
-            this.credentials, 
-            new BigInteger(String.valueOf(this.gasPrice)), 
-            new BigInteger(String.valueOf(this.gasLimit)));
+            deviceManagerSmartContractAddress, 
+            web3j, 
+            credentials, 
+            new BigInteger(String.valueOf(gasPrice)), 
+            new BigInteger(String.valueOf(gasLimit)));
     }
 
     public void saveOrUpdateRegistration(Registration registration) {
