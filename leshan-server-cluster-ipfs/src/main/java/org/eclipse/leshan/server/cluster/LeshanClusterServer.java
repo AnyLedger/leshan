@@ -34,6 +34,8 @@ import org.eclipse.leshan.core.model.ObjectModel;
 import org.eclipse.leshan.core.node.codec.DefaultLwM2mNodeDecoder;
 import org.eclipse.leshan.server.californium.LeshanServerBuilder;
 import org.eclipse.leshan.server.californium.impl.LeshanServer;
+import org.eclipse.leshan.server.cluster.blockchain.BlockchainManager;
+import org.eclipse.leshan.server.cluster.blockchain.ethereum.EthereumManager;
 import org.eclipse.leshan.server.model.LwM2mModelProvider;
 import org.eclipse.leshan.server.model.StaticModelProvider;
 import org.eclipse.leshan.util.NamedThreadFactory;
@@ -225,6 +227,8 @@ public class LeshanClusterServer {
             LOG.error("Error while opening a connection to IPFS");
         }
 
+        BlockchainManager blockchainManager = new EthereumManager();
+
         // Prepare LWM2M server.
         LeshanServerBuilder builder = new LeshanServerBuilder();
         builder.setLocalAddress(localAddress, localPort);
@@ -253,7 +257,7 @@ public class LeshanClusterServer {
         //        lwServer.getObservationService());
         //lwServer.getRegistrationService().addListener(tokenHandler);
         
-        lwServer.getRegistrationService().addListener(new IPFSRegistrationEventPublisher(ipfs));
+        lwServer.getRegistrationService().addListener(new IPFSRegistrationEventPublisher(ipfs, blockchainManager));
 
         // Start Jetty & Leshan
         LOG.info("Starting Leshan server...");
