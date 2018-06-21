@@ -44,20 +44,22 @@ public class EthereumManager implements BlockchainManager {
     private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
     private String deviceManagerSmartContractAddress = "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80";
 
+    private DeviceManager deviceManager;
+
     public EthereumManager() {
         this.web3j = Web3j.build(new HttpService(ethereumNodeUrl));
         this.credentials = Credentials.create(privateKey);
+
+        this.deviceManager = DeviceManager.load(
+            this.deviceManagerSmartContractAddress, 
+            this.web3j, 
+            this.credentials, 
+            new BigInteger(String.valueOf(this.gasPrice)), 
+            new BigInteger(String.valueOf(this.gasLimit)));
     }
 
     public void saveOrUpdateRegistration(Registration registration) {
         try {
-            DeviceManager deviceManager = DeviceManager.load(
-                this.deviceManagerSmartContractAddress, 
-                this.web3j, 
-                this.credentials, 
-                new BigInteger(String.valueOf(this.gasPrice)), 
-                new BigInteger(String.valueOf(this.gasLimit)));
-
             TransactionReceipt transactionReceipt = deviceManager.updateDeviceRegistration(registration.getId(), registration.getLatestIpfsHash()).send();
                 
             LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
