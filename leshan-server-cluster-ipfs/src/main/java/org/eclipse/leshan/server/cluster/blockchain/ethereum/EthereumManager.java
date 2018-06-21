@@ -25,6 +25,9 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.core.RemoteCall;
+import org.web3j.tx.FastRawTransactionManager;
+import org.web3j.tx.response.QueuingTransactionReceiptProcessor;
+import org.web3j.tx.response.Callback;
 
 import org.eclipse.leshan.server.cluster.DeviceManager;
 import org.eclipse.leshan.server.cluster.blockchain.BlockchainManager;
@@ -40,23 +43,45 @@ public class EthereumManager implements BlockchainManager {
     private Credentials credentials;
     private DeviceManager deviceManager;
 
+    private final long sleepDurationInMillisecond = 5000;
+    private final int attempts = 10;
+
     public EthereumManager(long gasLimit, long gasPrice, String ethereumNodeUrl, String privateKey, String deviceManagerSmartContractAddress) {
         this.web3j = Web3j.build(new HttpService(ethereumNodeUrl));
         this.credentials = Credentials.create(privateKey);
 
+        FastRawTransactionManager fastRawTxMgr = 
+            new FastRawTransactionManager(web3j, 
+                                          credentials, 
+                                          new QueuingTransactionReceiptProcessor(web3j,
+                                                                                new Callback() {
+                                                                                    @Override
+                                                                                    public void accept(TransactionReceipt transactionReceipt) {
+                                                                                        String transactionHash = transactionReceipt.getTransactionHash();
+
+                                                                                        LOG.info(String.format("Transaction hash: %s", transactionHash));
+                                                                                    }
+                                                                
+                                                                                    @Override
+                                                                                    public void exception(Exception e) {
+                                                                                        LOG.error("Unexpected Exception while adding registrations to Ethereum", e);
+                                                                                    }
+                                                                                }, 
+                                                                                attempts, sleepDurationInMillisecond));
+
         this.deviceManager = DeviceManager.load(
             deviceManagerSmartContractAddress, 
             web3j, 
-            credentials, 
+            fastRawTxMgr, 
             new BigInteger(String.valueOf(gasPrice)), 
             new BigInteger(String.valueOf(gasLimit)));
     }
 
     public void saveOrUpdateRegistration(Registration registration) {
         try {
-            TransactionReceipt transactionReceipt = deviceManager.updateDeviceRegistration(registration.getId(), registration.getLatestIpfsHash()).send();
+            deviceManager.updateDeviceRegistration(registration.getId(), registration.getLatestIpfsHash()).sendAsync();
                 
-            LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
+            LOG.info(String.format("Calling Device Manager smart contract."));
         } catch (RuntimeException e) {
             LOG.error("Device Manager smart contract might not be deployed?", e);
         } catch (Exception e) {
