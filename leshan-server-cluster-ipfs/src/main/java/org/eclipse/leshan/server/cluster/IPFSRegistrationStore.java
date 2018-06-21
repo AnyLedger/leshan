@@ -40,7 +40,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.math.BigInteger;
 
 import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.observe.ObservationUtil;
@@ -62,12 +61,6 @@ import org.eclipse.leshan.server.cluster.IPFSRegistrationEventPublisher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.crypto.Credentials;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.core.RemoteCall;
 
 /**
  * An in memory store for registration and observation.
@@ -457,7 +450,7 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
      */
     @Override
     public void start() {
-        schedExecutor.scheduleAtFixedRate(new EthereumAgent(), cleanPeriod, cleanPeriod, TimeUnit.SECONDS);
+        schedExecutor.scheduleAtFixedRate(new Cleaner(), cleanPeriod, cleanPeriod, TimeUnit.SECONDS);
     }
 
     /**
@@ -496,67 +489,6 @@ public class IPFSRegistrationStore implements CaliforniumRegistrationStore, Star
                 }
             } catch (Exception e) {
                 LOG.error("Unexpected Exception while registration cleaning", e);
-            }
-        }
-    }
-
-    private class EthereumAgent implements Runnable {
-
-        private Web3j web3j;
-        private Credentials credentials;
-        private long gasLimit = 2000000;
-        private long gasPrice = 20000000000L;
-        private String ethereumNodeUrl = "http://ganache-cli:8545";
-        private String privateKey = "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5";
-        private String deviceManagerSmartContractAddress = "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80";
-
-        public EthereumAgent() {
-            this.web3j = Web3j.build(new HttpService(ethereumNodeUrl));
-            this.credentials = Credentials.create(privateKey);
-        }
-
-        @Override
-        public void run() {
-            try {
-                LOG.info("Starting Ethereum agent.");
-
-                Collection<Registration> allRegistrations = new ArrayList<>();
-                try {
-                    lock.readLock().lock();
-                    allRegistrations.addAll(registrationsByEndpoint.values());
-                } finally {
-                    lock.readLock().unlock();
-                }
-
-                for (Registration registration : allRegistrations) {
-                    if (registration.isAlive()) {
-                        DeviceManager deviceManager = DeviceManager.load(
-                            this.deviceManagerSmartContractAddress, 
-                            this.web3j, 
-                            this.credentials, 
-                            new BigInteger(String.valueOf(this.gasPrice)), 
-                            new BigInteger(String.valueOf(this.gasLimit)));
-                        
-                        Registration tempRegistration = registrationsByEndpoint.get(registration.getEndpoint());
-
-                        String latestIpfsHash = tempRegistration.getLatestIpfsHash();
-
-                        if (latestIpfsHash != null && !latestIpfsHash.isEmpty()) {
-                            TransactionReceipt transactionReceipt = 
-                                deviceManager.updateDeviceRegistration(
-                                    tempRegistration.getId(), 
-                                    latestIpfsHash).send();
-                            
-                            LOG.info(String.format("Calling Device Manager smart contract. Transaction hash: %s", transactionReceipt.getTransactionHash()));
-                        } else {
-                            LOG.warn("Latest IPFS hash is missing on the registration");
-                        }
-                    }
-                }
-            } catch (RuntimeException e) {
-                LOG.error("Device Manager smart contract might not be deployed?", e);
-            } catch (Exception e) {
-                LOG.error("Unexpected Exception while adding registrations to Ethereum", e);
             }
         }
     }
