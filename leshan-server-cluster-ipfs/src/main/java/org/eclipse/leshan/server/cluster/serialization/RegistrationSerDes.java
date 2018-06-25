@@ -24,8 +24,6 @@ import org.eclipse.leshan.Link;
 import org.eclipse.leshan.core.request.BindingMode;
 import org.eclipse.leshan.server.registration.Registration;
 
-import io.ipfs.multihash.Multihash;
-
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -77,6 +75,7 @@ public class RegistrationSerDes {
         }
         o.add("addAttr", addAttr);
         o.add("root", r.getRootPath());
+        o.add("lastUp", r.getLastUpdate().getTime());
 
         return o;
     }
