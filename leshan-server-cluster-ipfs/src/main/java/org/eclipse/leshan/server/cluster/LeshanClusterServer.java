@@ -147,7 +147,7 @@ public class LeshanClusterServer {
         // Get the IPFS hostname
         String ipfsUrl = cl.getOptionValue("ipfs");
         if (ipfsUrl == null) {
-            ipfsUrl = "ipfs";
+            ipfsUrl = "ipfs-ethereum";
         }
 
         LOG.info(String.format("IPFS address set to: %s", ipfsUrl));
