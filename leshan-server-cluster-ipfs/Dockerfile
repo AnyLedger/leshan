@@ -32,7 +32,7 @@ ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
 ENV PATH $PATH:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
 
 ENV JAVA_VERSION 8u151
-ENV JAVA_ALPINE_VERSION 8.151.12-r0
+ENV JAVA_ALPINE_VERSION 8.171.11-r0
 
 RUN set -x \
 	&& apk add --no-cache \
@@ -58,8 +58,8 @@ EXPOSE 5683
 # Server COAP secure port
 EXPOSE 5684
 
-# Copy Leshan server application JAR (with libraries inside) 
+# Copy Leshan server application JAR (with libraries inside)
 COPY target/leshan-server-cluster-ipfs-1.0.0-SNAPSHOT-jar-with-dependencies.jar /leshan-server-cluster-ipfs.jar
 
-# Specify default command 
+# Specify default command
 CMD ["/usr/bin/java", "-jar", "/leshan-server-cluster-ipfs.jar", "-ipfs", "ipfs-ethereum", "-bn", "http://ganache-cli:8545", "-gl", "2000000", "-gp", "20000000000", "-pk", "0x76dda3572973659eabbd6c9279b66256838038da8189ee689e174e7acabfe3c5", "-sc", "0x3d18c830c5110e3d29c5dfff28719dee3cc3ed80"]
